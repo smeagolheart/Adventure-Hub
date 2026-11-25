@@ -1,0 +1,22 @@
+// Adventure Hub: a tavern where quest givers send you on standalone adventures.
+// Filename prefix: S9. Installs on BG2EE with EET; plays as its own campaign.
+
+BACKUP ~weidu_external/backup/adventurehub~
+AUTHOR ~https://github.com/smeagolheart/Adventure-Hub/issues~
+VERSION ~v0.1.0~
+
+ALWAYS
+  INCLUDE ~adventurehub/lib/s9_area.tpa~
+END
+
+LANGUAGE ~English~ ~english~
+  ~adventurehub/tra/english/setup.tra~
+  ~adventurehub/tra/english/hub.tra~
+
+// Component 0: the hub itself (inn, opening cutscene).
+BEGIN @1 DESIGNATED 0
+REQUIRE_PREDICATE GAME_IS ~eet~ @2
+
+INCLUDE ~adventurehub/hub/areas.tpa~
+// The .baf files use %yard_x%, %hub_x% etc. worked out by areas.tpa.
+COMPILE EVALUATE_BUFFER ~adventurehub/hub/baf~

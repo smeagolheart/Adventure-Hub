@@ -1,0 +1,58 @@
+// Build the hub's three areas from the Friendly Arm Inn.
+//   S9YARD  exterior, seen only in the opening cutscene (night, rain, no exits)
+//   S9HUB   inn ground floor, where play begins
+//   S9HUB2  inn upper floor
+// Names below are BGEE's; S9_BG1_AREA finds EET's renamed versions.
+
+LAF S9_BG1_AREA STR_VAR area = ~AR2300~ RET yard_src = resref END
+LAF S9_BG1_AREA STR_VAR area = ~AR2301~ RET hub_src  = resref END
+LAF S9_BG1_AREA STR_VAR area = ~AR2302~ RET up_src   = resref END
+
+// Read the original layout before changing anything (nothing is written here).
+// door_*  : centre of the inn door, outside (where the party walks to)
+// yard_*  : where you arrive outside when leaving the inn (cutscene start point)
+// hub_*   : where you arrive inside when entering the inn (where play begins)
+COPY_EXISTING ~%yard_src%.ARE~ ~override~
+  LPF S9_FIND_TRAVEL STR_VAR dest_area = EVAL ~%hub_src%~
+    RET door_found = found door_x = x door_y = y door_entrance = entrance END
+  BUT_ONLY_IF_IT_CHANGES
+
+COPY_EXISTING ~%hub_src%.ARE~ ~override~
+  LPF S9_FIND_TRAVEL STR_VAR dest_area = EVAL ~%yard_src%~
+    RET out_found = found out_entrance = entrance END
+  LPF S9_FIND_ENTRANCE STR_VAR name = EVAL ~%door_entrance%~
+    RET hub_found = found hub_x = x hub_y = y END
+  BUT_ONLY_IF_IT_CHANGES
+
+COPY_EXISTING ~%yard_src%.ARE~ ~override~
+  LPF S9_FIND_ENTRANCE STR_VAR name = EVAL ~%out_entrance%~
+    RET yard_found = found yard_x = x yard_y = y END
+  BUT_ONLY_IF_IT_CHANGES
+
+ACTION_IF NOT (door_found AND out_found AND hub_found AND yard_found) BEGIN
+  FAIL ~Adventure Hub: could not read the Friendly Arm Inn layout (door %door_found%, exit %out_found%, inside %hub_found%, outside %yard_found%).~
+END
+
+PRINT ~Adventure Hub: inn door at [%door_x%.%door_y%], outside [%yard_x%.%yard_y%], inside [%hub_x%.%hub_y%].~
+
+LAF S9_CLONE_AREA STR_VAR source = EVAL ~%yard_src%~ target = ~S9YARD~ END
+LAF S9_CLONE_AREA STR_VAR source = EVAL ~%hub_src%~  target = ~S9HUB~  END
+LAF S9_CLONE_AREA STR_VAR source = EVAL ~%up_src%~   target = ~S9HUB2~ END
+
+OUTER_SET rain_text = RESOLVE_STR_REF (@200)
+
+// The yard is only ever seen in the opening cutscene: no exits, always raining.
+COPY_EXISTING ~S9YARD.ARE~ ~override~
+  WRITE_SHORT 0x5a 0                 // no regions, so no exits
+  WRITE_SHORT 0x48 (THIS BOR 0x4)    // weather enabled
+  WRITE_SHORT 0x4a 100               // rain chance
+
+// Ground floor: the stairs lead to our upper floor; the front door goes nowhere.
+COPY_EXISTING ~S9HUB.ARE~ ~override~
+  LPF S9_REPOINT_TRAVEL STR_VAR old_dest = EVAL ~%up_src%~ new_dest = ~S9HUB2~ END
+  LPF S9_TRAVEL_TO_INFO INT_VAR strref = rain_text STR_VAR dest_area = EVAL ~%yard_src%~ END
+
+// Upper floor: the stairs lead back to our ground floor.
+COPY_EXISTING ~S9HUB2.ARE~ ~override~
+  LPF S9_REPOINT_TRAVEL STR_VAR old_dest = EVAL ~%hub_src%~ new_dest = ~S9HUB~ END
+  LPF S9_TRAVEL_TO_INFO INT_VAR strref = rain_text STR_VAR dest_area = EVAL ~%yard_src%~ END

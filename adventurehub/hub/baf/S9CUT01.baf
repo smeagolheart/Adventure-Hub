@@ -1,0 +1,46 @@
+// Opening cutscene: the party comes in out of the rain.
+// Start it with StartCutSceneMode() then StartCutScene("S9CUT01").
+// %yard_x% etc. are filled in at install time from the Friendly Arm Inn layout.
+
+IF
+  True()
+THEN
+  RESPONSE #100
+    CutSceneId(Player1)
+    FadeToColor([20.0],0)
+    Wait(1)
+    ActionOverride(Player2,LeaveAreaLUAPanic("S9YARD","",[%yard_x%.%yard_y%],S))
+    ActionOverride(Player3,LeaveAreaLUAPanic("S9YARD","",[%yard_x%.%yard_y%],S))
+    ActionOverride(Player4,LeaveAreaLUAPanic("S9YARD","",[%yard_x%.%yard_y%],S))
+    ActionOverride(Player5,LeaveAreaLUAPanic("S9YARD","",[%yard_x%.%yard_y%],S))
+    ActionOverride(Player6,LeaveAreaLUAPanic("S9YARD","",[%yard_x%.%yard_y%],S))
+    LeaveAreaLUAPanic("S9YARD","",[%yard_x%.%yard_y%],S)
+    Wait(1)
+    DayNight(MIDNIGHT)
+    Weather(RAIN)
+    MoveViewPoint([%yard_x%.%yard_y%],INSTANT)
+    FadeFromColor([30.0],0)
+    Wait(2)
+    DisplayStringHead(Player1,@300)
+    Wait(2)
+    ActionOverride(Player2,MoveToPoint([%door_x%.%door_y%]))
+    ActionOverride(Player3,MoveToPoint([%door_x%.%door_y%]))
+    ActionOverride(Player4,MoveToPoint([%door_x%.%door_y%]))
+    ActionOverride(Player5,MoveToPoint([%door_x%.%door_y%]))
+    ActionOverride(Player6,MoveToPoint([%door_x%.%door_y%]))
+    MoveViewPoint([%door_x%.%door_y%],SLOW)
+    MoveToPoint([%door_x%.%door_y%])
+    FadeToColor([20.0],0)
+    Wait(1)
+    ActionOverride(Player2,LeaveAreaLUAPanic("S9HUB","",[%hub_x%.%hub_y%],N))
+    ActionOverride(Player3,LeaveAreaLUAPanic("S9HUB","",[%hub_x%.%hub_y%],N))
+    ActionOverride(Player4,LeaveAreaLUAPanic("S9HUB","",[%hub_x%.%hub_y%],N))
+    ActionOverride(Player5,LeaveAreaLUAPanic("S9HUB","",[%hub_x%.%hub_y%],N))
+    ActionOverride(Player6,LeaveAreaLUAPanic("S9HUB","",[%hub_x%.%hub_y%],N))
+    LeaveAreaLUAPanic("S9HUB","",[%hub_x%.%hub_y%],N)
+    Wait(1)
+    MoveViewPoint([%hub_x%.%hub_y%],INSTANT)
+    FadeFromColor([20.0],0)
+    SetGlobal("S9_OPENING_DONE","GLOBAL",1)
+    EndCutSceneMode()
+END

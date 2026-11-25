@@ -1,0 +1,9 @@
+// Yard outside the inn, seen only in the opening cutscene (S9CUT01).
+// Keep it raining and dark if the cutscene lingers.
+
+IF
+  False()
+THEN
+  RESPONSE #100
+    NoAction()
+END
