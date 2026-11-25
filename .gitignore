@@ -1,0 +1,7 @@
+# WeiDU and editor leftovers
+*.debug
+weidu_external/
+backup/
+*.bak
+.DS_Store
+Thumbs.db
