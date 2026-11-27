@@ -1,0 +1,146 @@
+// Area helpers for the Adventure Hub (prefix S9).
+//
+// Offsets follow the ARE V1.0 format (IESDP). If an area behaves oddly in game,
+// open it in Near Infinity and compare against the offsets named here.
+//   Header:   0x08 WED resref, 0x48 area type flags, 0x4a rain chance,
+//             0x58 actor count, 0x5a region count, 0x5c region offset,
+//             0x64 spawn point count, 0x68 entrance offset, 0x6c entrance count,
+//             0x94 area script
+//   Region (0xc4 bytes): 0x20 type (1 info, 2 travel), 0x22 bounding box,
+//             0x34 cursor, 0x38 destination area, 0x40 destination entrance,
+//             0x64 info text strref
+//   Entrance (0x68 bytes): 0x00 name, 0x20 x, 0x22 y
+
+// The game's resref for a BG1 area. EET renames BG1 areas from ARxxxx to BGxxxx;
+// plain BGEE keeps ARxxxx.
+DEFINE_ACTION_FUNCTION S9_BG1_AREA
+  STR_VAR area = ""
+  RET resref
+BEGIN
+  OUTER_PATCH_SAVE eet_name ~%area%~ BEGIN
+    REPLACE_TEXTUALLY ~^AR~ ~BG~
+  END
+  ACTION_IF FILE_EXISTS_IN_GAME ~%eet_name%.ARE~ BEGIN
+    OUTER_TEXT_SPRINT resref ~%eet_name%~
+  END ELSE ACTION_IF FILE_EXISTS_IN_GAME ~%area%.ARE~ BEGIN
+    OUTER_TEXT_SPRINT resref ~%area%~
+  END ELSE BEGIN
+    FAIL ~Adventure Hub: cannot find area %area% (or %eet_name%).~
+  END
+END
+
+// Copy an area under a new resref: ARE, WED (and night WED), light/search/height
+// maps and minimap. Tiles (TIS/PVRZ) stay shared with the original.
+// The copy has no creatures and no spawn points, and runs the script named after it.
+DEFINE_ACTION_FUNCTION S9_CLONE_AREA
+  STR_VAR source = "" target = ""
+BEGIN
+  COPY_EXISTING ~%source%.ARE~ ~override/%target%.ARE~
+    WRITE_ASCIIE 0x08 ~%target%~ #8   // WED resref
+    WRITE_ASCIIE 0x94 ~%target%~ #8   // area script
+    WRITE_SHORT  0x58 0               // no creatures
+    WRITE_LONG   0x64 0               // no spawn points
+
+  COPY_EXISTING ~%source%.WED~ ~override/%target%.WED~
+  ACTION_IF FILE_EXISTS_IN_GAME ~%source%N.WED~ BEGIN
+    COPY_EXISTING ~%source%N.WED~ ~override/%target%N.WED~
+  END
+
+  ACTION_FOR_EACH suffix IN ~LM~ ~LN~ ~SR~ ~HT~ BEGIN
+    ACTION_IF FILE_EXISTS_IN_GAME ~%source%%suffix%.BMP~ BEGIN
+      COPY_EXISTING ~%source%%suffix%.BMP~ ~override/%target%%suffix%.BMP~
+    END
+  END
+
+  ACTION_IF FILE_EXISTS_IN_GAME ~%source%.MOS~ BEGIN
+    COPY_EXISTING ~%source%.MOS~ ~override/%target%.MOS~
+  END
+END
+
+// Find the first travel region leading to dest_area.
+// Returns its centre point and the entrance name it sends you to.
+DEFINE_PATCH_FUNCTION S9_FIND_TRAVEL
+  STR_VAR dest_area = ""
+  RET found x y entrance
+BEGIN
+  SET found = 0
+  SET x = 0
+  SET y = 0
+  TEXT_SPRINT entrance ~~
+  READ_LONG  0x5c reg_off
+  READ_SHORT 0x5a reg_cnt
+  FOR (i = 0; i < reg_cnt; ++i) BEGIN
+    SET r = reg_off + i * 0xc4
+    READ_SHORT (r + 0x20) type
+    READ_ASCII (r + 0x38) dest (8) NULL
+    PATCH_IF (found = 0) AND (type = 2) AND ("%dest%" STRING_EQUAL_CASE "%dest_area%") BEGIN
+      READ_SHORT (r + 0x22) box_l
+      READ_SHORT (r + 0x24) box_t
+      READ_SHORT (r + 0x26) box_r
+      READ_SHORT (r + 0x28) box_b
+      SET x = (box_l + box_r) / 2
+      SET y = (box_t + box_b) / 2
+      READ_ASCII (r + 0x40) entrance (32) NULL
+      SET found = 1
+    END
+  END
+END
+
+// Find an entrance by name. Returns its point.
+DEFINE_PATCH_FUNCTION S9_FIND_ENTRANCE
+  STR_VAR name = ""
+  RET found x y
+BEGIN
+  SET found = 0
+  SET x = 0
+  SET y = 0
+  READ_LONG 0x68 ent_off
+  READ_LONG 0x6c ent_cnt
+  FOR (i = 0; i < ent_cnt; ++i) BEGIN
+    SET e = ent_off + i * 0x68
+    READ_ASCII e ent_name (32) NULL
+    PATCH_IF (found = 0) AND ("%ent_name%" STRING_EQUAL_CASE "%name%") BEGIN
+      READ_SHORT (e + 0x20) x
+      READ_SHORT (e + 0x22) y
+      SET found = 1
+    END
+  END
+END
+
+// Point every travel region that leads to old_dest at new_dest instead.
+DEFINE_PATCH_FUNCTION S9_REPOINT_TRAVEL
+  STR_VAR old_dest = "" new_dest = ""
+BEGIN
+  READ_LONG  0x5c reg_off
+  READ_SHORT 0x5a reg_cnt
+  FOR (i = 0; i < reg_cnt; ++i) BEGIN
+    SET r = reg_off + i * 0xc4
+    READ_SHORT (r + 0x20) type
+    READ_ASCII (r + 0x38) dest (8) NULL
+    PATCH_IF (type = 2) AND ("%dest%" STRING_EQUAL_CASE "%old_dest%") BEGIN
+      WRITE_ASCIIE (r + 0x38) ~%new_dest%~ #8
+    END
+  END
+END
+
+// Turn every travel region that leads to dest_area into an info point that
+// shows strref when clicked, so that exit no longer goes anywhere.
+DEFINE_PATCH_FUNCTION S9_TRAVEL_TO_INFO
+  INT_VAR strref = 0
+  STR_VAR dest_area = ""
+BEGIN
+  READ_LONG  0x5c reg_off
+  READ_SHORT 0x5a reg_cnt
+  FOR (i = 0; i < reg_cnt; ++i) BEGIN
+    SET r = reg_off + i * 0xc4
+    READ_SHORT (r + 0x20) type
+    READ_ASCII (r + 0x38) dest (8) NULL
+    PATCH_IF (type = 2) AND ("%dest%" STRING_EQUAL_CASE "%dest_area%") BEGIN
+      WRITE_SHORT (r + 0x20) 1        // info point
+      WRITE_LONG  (r + 0x34) 22       // info cursor
+      WRITE_LONG  (r + 0x38) 0        // clear destination area
+      WRITE_LONG  (r + 0x3c) 0
+      WRITE_LONG  (r + 0x64) strref
+    END
+  END
+END

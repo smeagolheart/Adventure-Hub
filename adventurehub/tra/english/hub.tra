@@ -1,0 +1,5 @@
+// Front door of the inn, once you are inside.
+@200 = ~Rain hammers the door. Nobody with any sense is going back out there tonight.~
+
+// Opening cutscene narration.
+@300 = ~Cold, soaked and tired, you see the lamps of an inn through the rain.~

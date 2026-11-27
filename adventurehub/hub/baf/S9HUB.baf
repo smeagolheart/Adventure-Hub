@@ -1,0 +1,9 @@
+// Inn ground floor. Quest givers and their checks arrive in milestone 2.
+
+IF
+  Global("S9_HUB_ENTERED","GLOBAL",0)
+THEN
+  RESPONSE #100
+    SetGlobal("S9_HUB_ENTERED","GLOBAL",1)
+    Continue()
+END

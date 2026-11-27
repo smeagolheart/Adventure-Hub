@@ -1,0 +1,8 @@
+// Inn upper floor. Nothing to do yet; later tiers may add givers here.
+
+IF
+  False()
+THEN
+  RESPONSE #100
+    NoAction()
+END
