@@ -33,7 +33,24 @@ ACTION_IF NOT (door_found AND out_found AND hub_found AND yard_found) BEGIN
   FAIL ~Adventure Hub: could not read the Friendly Arm Inn layout (door %door_found%, exit %out_found%, inside %hub_found%, outside %yard_found%).~
 END
 
-PRINT ~Adventure Hub: inn door at [%door_x%.%door_y%], outside [%yard_x%.%yard_y%], inside [%hub_x%.%hub_y%].~
+// The cutscene starts the party at the arrival point just outside the door and
+// walks them a few steps toward it. A short, capped walk keeps them from
+// pathing around the walls when the door centre itself is not walkable.
+OUTER_SET walk_max = 60
+OUTER_SET dx = door_x - yard_x
+OUTER_SET dy = door_y - yard_y
+OUTER_SET adx = (dx < 0) ? (0 - dx) : dx
+OUTER_SET ady = (dy < 0) ? (0 - dy) : dy
+OUTER_SET dist = (adx > ady) ? adx : ady
+ACTION_IF dist > walk_max BEGIN
+  OUTER_SET step_x = yard_x + (dx * walk_max / dist)
+  OUTER_SET step_y = yard_y + (dy * walk_max / dist)
+END ELSE BEGIN
+  OUTER_SET step_x = door_x
+  OUTER_SET step_y = door_y
+END
+
+PRINT ~Adventure Hub: inn door at [%door_x%.%door_y%], outside [%yard_x%.%yard_y%], walk to [%step_x%.%step_y%], inside [%hub_x%.%hub_y%].~
 
 LAF S9_CLONE_AREA STR_VAR source = EVAL ~%yard_src%~ target = ~S9YARD~ END
 LAF S9_CLONE_AREA STR_VAR source = EVAL ~%hub_src%~  target = ~S9HUB~  END
