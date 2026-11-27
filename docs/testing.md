@@ -12,13 +12,16 @@ WeiDU 249 and its area patching was run against stand-in area files, not EET's.
    then Ctrl+Space) and run:
 
    ```
-   C:Eval('StartCutSceneMode()')
-   C:Eval('StartCutScene("S9CUT01")')
+   C:MoveToArea("S9YARD")
    ```
 
+   Arriving in the yard plays the opening cutscene once. To watch it again, run
+   `C:Eval('SetGlobal("S9_OPENING_STARTED","GLOBAL",0)')` and move to the yard again.
+
 4. Check:
-   - [ ] The party appears outside the inn at night, in the rain.
-   - [ ] The narration line shows, the party walks to the inn door, and the screen fades.
+   - [ ] The yard is dark and raining.
+   - [ ] The party is placed just outside the inn door, with the camera on Player1.
+   - [ ] The narration line shows, the party takes a few steps toward the door, and the screen fades.
    - [ ] The party ends up inside `S9HUB` with no original inn characters.
    - [ ] The stairs go to `S9HUB2` and back.
    - [ ] Clicking the front door shows the rain message and does not leave.
@@ -30,8 +33,9 @@ Things most likely to need fixing:
 - The area names. `S9_BG1_AREA` assumes EET renamed `AR2300`/`AR2301`/`AR2302` to
   `BG2300`/`BG2301`/`BG2302`. If the install fails to find them, look up the Friendly Arm
   Inn's names in Near Infinity.
-- The walk to the door: the door point is the centre of the exterior travel region,
-  which might be awkward to path to.
+- The start point: the party starts at the yard entrance the inn's front exit uses and
+  walks at most 60 pixels toward the door. If it starts in the wrong place, send the
+  `Adventure Hub: inn door at ...` line from `setup-adventurehub.debug`.
 
 ## Still to build in milestone 1: the campaign entry
 

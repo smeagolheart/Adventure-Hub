@@ -1,9 +1,23 @@
-// Yard outside the inn, seen only in the opening cutscene (S9CUT01).
-// Keep it raining and dark if the cutscene lingers.
+// Yard outside the inn. Arriving here (the campaign start, or C:MoveToArea("S9YARD")
+// while testing) plays the opening cutscene once. The yard is always night and rain.
 
 IF
-  False()
+  OnCreation()
 THEN
   RESPONSE #100
-    NoAction()
+    DayNight(MIDNIGHT)
+    Weather(RAIN)
+    Continue()
+END
+
+IF
+  Global("S9_OPENING_STARTED","GLOBAL",0)
+THEN
+  RESPONSE #100
+    SetGlobal("S9_OPENING_STARTED","GLOBAL",1)
+    DayNight(MIDNIGHT)
+    Weather(RAIN)
+    ClearAllActions()
+    StartCutSceneMode()
+    StartCutScene("S9CUT01")
 END
